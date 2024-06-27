@@ -29,15 +29,14 @@ const traerProductoPuntual = async (req, res) => {
 };
 
 const agregarProducto = async (req, res) => {
-    const { nombre, marca, categoria, stock } = req.body;
     try {
-        const respuesta = await pool.query(
-            "INSERT INTO productos (nombre, marca, categoria, stock) VALUES ($1, $2, $3, $4) RETURNING *",
-            [nombre, marca, categoria, stock]
-        );
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader('Content-Type', 'application/json;charset=utf-8')
-        res.status(201).json(respuesta.rows[0]);
+        const datos = req.body;
+        if (!datos.nombre || !datos.marca || !datos.categoria || !datos.stock) {
+            // Si falta algún dato, responder con error 404
+            return res.status(400).json({ error: 'Datos incompletos' });
+        }
+        const {rows, rowCount} = await pool.query('INSERT INTO productos (nombre, marca, categoria, stock) VALUES ($1, $2, $3, $4) RETURNING *', [datos.nombre, datos.marca, datos.categoria, datos.stock]);
+        return res.end()
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ error: 'Error al crear el producto' });
@@ -47,6 +46,11 @@ const agregarProducto = async (req, res) => {
 const modificarProducto = async (req, res) => {
     const { id } = req.params;
     const { nombre, marca, categoria, stock } = req.body;
+
+    if (!nombre || !marca || !categoria || !stock) {
+        return res.status(400).json({ error: 'Datos incompletos' });
+    }
+    
     try {
         const respuesta = await pool.query(
             "UPDATE productos SET nombre=$1, marca=$2, categoria=$3, stock=$4 WHERE id=$5 RETURNING *",
